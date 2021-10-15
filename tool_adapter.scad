@@ -1,22 +1,23 @@
 $fa = 1;
 $fs = 0.1;
 
-iota = 5;
+iota = 1;
 thickness = 8;
 screw_space_x = 40;
 screw_space_z = 56;
 screw_diameter = 5.5;
-plate_x = 70;
-plate_z = 80;
-plate_y =  thickness;
+plate_x = screw_space_x + screw_diameter + thickness * 2;
+plate_z = screw_space_z + screw_diameter + thickness * 2;
+plate_y = thickness;
 
 tool_diameter = 20;
 tool_z = 30;
+support_z = 2;
 
-label_size = 8;
+label_size = 6;
 label_font = "Tahoma";
 label_thickness = 1;
-label1_z = tool_diameter + 40;
+label1_z = tool_diameter + 30;
 label1_text = "Jaded";
 label2_z = tool_diameter + 20;
 label2_text = "Jabberwocky";
@@ -61,27 +62,45 @@ module screw_holes() {
 module tool() {
   r = tool_diameter / 2;
   hz = tool_z / 2;
+  hpx = plate_x / 2;
+  ht = thickness / 2;
 
   difference() {
     union() {
+      // Rectangular back half of tool
       translate([0, (r + thickness) / 2, hz])
         scale([tool_diameter + thickness, tool_diameter / 2 + thickness, tool_z])
           cube(center = true);
+      // Extra surface area for bed adhesion
+      linear_extrude(support_z)
+        polygon(points = [
+          [-hpx, ht],
+          [-(screw_diameter + thickness) / 2, tool_diameter + thickness * 2],
+          [(screw_diameter + thickness) / 2, tool_diameter + thickness * 2],
+          [hpx, ht]
+        ]);
+      // Screw hole rectangle in front of tool
+      translate([0, tool_diameter + thickness * 1.5, hz])
+        scale([screw_diameter + thickness, thickness, tool_z])
+          cube(center = true);
+      // Outer cylinder of tool
       translate([0, r + thickness, hz])
-        cylinder(d = tool_diameter + thickness, h = tool_z, center = true);
+        scale([tool_diameter + thickness, tool_diameter + thickness, 1])
+          cylinder(d = 1, h = tool_z, center = true);
     }
     translate([0, r + thickness, hz])
-      cylinder(d = tool_diameter, h = tool_z + iota, center=true);
+      scale([tool_diameter, tool_diameter, 1])
+        cylinder(d = 1, h = tool_z + iota, center=true);
   }
 }
 
 module tool_screws() {
-  translate([0, thickness + tool_diameter, tool_z / 3])
+  translate([0, thickness * 1.5 + tool_diameter, tool_z / 3])
     rotate([90, 0, 0])
-      cylinder(d = screw_diameter, h = thickness + iota, center = true);
-  translate([0, thickness + tool_diameter, tool_z * 2 / 3])
+      cylinder(d = screw_diameter, h = thickness + iota*2, center = true);
+  translate([0, thickness * 1.5 + tool_diameter, tool_z * 2 / 3])
     rotate([90, 0, 0])
-      cylinder(d = screw_diameter, h = thickness + iota, center = true);
+      cylinder(d = screw_diameter, h = thickness + iota*2, center = true);
 }
 
 module label() {
